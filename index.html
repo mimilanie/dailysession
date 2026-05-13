@@ -1,0 +1,1237 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Lesson Session Plan Maker / Banghay Aralin</title>
+  <style>
+    /* ===== RESET & BASE ===== */
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #0f172a; background: #071a48; }
+
+    /* ===== LOCK SCREEN ===== */
+    #lockScreen {
+      position: fixed; inset: 0; z-index: 9999;
+      background: radial-gradient(circle at top left, #3b82f6 0, #0f2f74 34%, #071a48 72%);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .lock-card {
+      background: #fff; border-radius: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.45);
+      padding: 44px 40px 36px; max-width: 500px; width: 100%; text-align: center;
+      animation: fadeUp .5s ease;
+    }
+    @keyframes fadeUp { from { opacity:0; transform:translateY(30px); } to { opacity:1; transform:translateY(0); } }
+    .lock-icon { font-size: 56px; margin-bottom: 10px; display: block; }
+    .lock-title { font-size: 24px; font-weight: 900; color: #0f2f74; margin: 0 0 6px; }
+    .lock-subtitle { font-size: 14px; color: #64748b; margin: 0 0 20px; line-height: 1.6; }
+    .price-badge {
+      display: inline-block; background: linear-gradient(90deg,#f4c430,#f59e0b);
+      color: #0f2f74; font-weight: 900; font-size: 22px; padding: 10px 30px;
+      border-radius: 999px; margin-bottom: 22px; box-shadow: 0 4px 16px rgba(245,158,11,.35);
+    }
+    .price-badge span { font-size: 13px; font-weight: 700; display: block; }
+    .lock-error {
+      background: #fef2f2; color: #b91c1c; border-radius: 10px;
+      padding: 10px 14px; font-size: 13px; font-weight: 700; margin-bottom: 14px; display: none;
+    }
+    .lock-success {
+      background: #f0fdf4; color: #166534; border-radius: 10px;
+      padding: 10px 14px; font-size: 13px; font-weight: 700; margin-bottom: 14px; display: none;
+    }
+    .lock-input-wrap { position: relative; margin-bottom: 14px; }
+    .lock-input-wrap input {
+      width: 100%; border: 2px solid #e2e8f0; border-radius: 14px; background: #f8fafc;
+      padding: 14px 48px 14px 18px; font-size: 16px; font-family: inherit; outline: none;
+      transition: .18s; letter-spacing: .06em; text-align: center;
+    }
+    .lock-input-wrap input:focus { border-color: #1d4ed8; background: #fff; box-shadow: 0 0 0 4px #dbeafe; }
+    .lock-input-wrap .eye-btn {
+      position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 18px; color: #94a3b8; padding: 4px;
+    }
+    .lock-submit {
+      width: 100%; background: linear-gradient(90deg,#1d4ed8,#0f2f74); color: #fff;
+      border: 0; border-radius: 999px; padding: 15px; font-size: 16px; font-weight: 900;
+      cursor: pointer; letter-spacing: .05em; text-transform: uppercase; transition: .2s;
+      margin-bottom: 14px; box-shadow: 0 8px 24px rgba(15,47,116,.3);
+    }
+    .lock-submit:hover { opacity: .9; transform: translateY(-1px); }
+    .lock-divider { border: none; border-top: 1px solid #e2e8f0; margin: 18px 0; }
+    .lock-info { font-size: 12px; color: #94a3b8; line-height: 1.7; margin-top: 6px; }
+    /* Connection notice box */
+    .conn-box {
+      background: #eff6ff; border: 2px solid #bfdbfe; border-radius: 12px;
+      padding: 12px 16px; margin-bottom: 18px; text-align: left;
+      display: flex; align-items: flex-start; gap: 10px;
+    }
+    .conn-box .conn-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+    .conn-box .conn-text { font-size: 12px; color: #1e40af; line-height: 1.6; }
+    .conn-box .conn-text strong { color: #1d4ed8; display: block; margin-bottom: 2px; font-size: 13px; }
+
+    /* ===== EXPIRED SCREEN ===== */
+    #expiredScreen {
+      position: fixed; inset: 0; z-index: 9998;
+      background: radial-gradient(circle at top left, #dc2626 0, #7f1d1d 34%, #071a48 72%);
+      display: none; align-items: center; justify-content: center; padding: 20px;
+    }
+    .expired-card {
+      background: #fff; border-radius: 28px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.45);
+      padding: 44px 40px 36px; max-width: 480px; width: 100%; text-align: center;
+    }
+
+    /* ===== STATUS BAR ===== */
+    #statusBar {
+      display: none; background: #0f2f74; color: #fff;
+      padding: 10px 20px; font-size: 13px; font-weight: 700;
+      position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #f4c430;
+    }
+    #statusBar .status-inner {
+      max-width: 1120px; margin: 0 auto;
+      display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;
+    }
+    #statusBar .status-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .status-badge { background: #f4c430; color: #0f2f74; border-radius: 999px; padding: 3px 12px; font-size: 12px; font-weight: 900; }
+    .status-badge.warning { background: #f97316; color: #fff; }
+    .status-badge.danger  { background: #dc2626; color: #fff; }
+    .logout-btn {
+      background: rgba(255,255,255,.15); color: #fff; border: 1px solid rgba(255,255,255,.3);
+      border-radius: 999px; padding: 5px 16px; font-size: 12px; font-weight: 900;
+      cursor: pointer; transition: .2s; letter-spacing: .04em; text-transform: uppercase;
+    }
+    .logout-btn:hover { background: rgba(255,255,255,.25); }
+
+    /* ===== MAIN APP (hidden until unlocked) ===== */
+    #mainApp { display: none; }
+
+    /* ===== HERO ===== */
+    .hero {
+      padding: 48px 20px 72px; color: #fff;
+      background: radial-gradient(circle at top left, #3b82f6 0, #0f2f74 34%, #071a48 72%);
+    }
+    .wrap { max-width: 1120px; margin: 0 auto; }
+    .kicker { margin: 0 0 12px; color: #dbeafe; font-size: 13px; font-weight: 700; letter-spacing: .25em; text-transform: uppercase; }
+    h1 { margin: 0; max-width: 760px; font-size: clamp(36px, 7vw, 68px); line-height: .95; letter-spacing: -0.05em; }
+    .lead { max-width: 720px; margin: 22px 0 0; color: #eff6ff; font-size: 18px; line-height: 1.7; }
+    .credit { display: inline-block; margin-top: 24px; border-left: 4px solid #f4c430; background: rgba(255,255,255,.11); padding: 12px 16px; font-size: 14px; font-weight: 700; }
+
+    /* ===== FORM CARD ===== */
+    .panel { max-width: 1120px; margin: -34px auto 48px; padding: 0 20px; }
+    .form-card { background: #fff; border-radius: 28px; box-shadow: 0 24px 70px rgba(0,0,0,.32); padding: 30px; }
+    .form-head { display: flex; justify-content: space-between; gap: 16px; align-items: end; border-bottom: 1px solid #e2e8f0; padding-bottom: 18px; margin-bottom: 22px; }
+    h2 { margin: 0; color: #0f2f74; font-size: 26px; }
+    .hint { margin: 5px 0 0; color: #64748b; font-size: 14px; }
+    .required { color: #dc2626; font-weight: 800; font-size: 14px; }
+    .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    label { display: block; }
+    label span { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 800; color: #334155; }
+    input, textarea, select {
+      width: 100%; border: 2px solid #e2e8f0; border-radius: 14px; background: #f8fafc;
+      padding: 13px 14px; font: inherit; outline: none; transition: .18s;
+    }
+    textarea { min-height: 112px; resize: vertical; }
+    input:focus, textarea:focus, select:focus { border-color: #1d4ed8; background: #fff; box-shadow: 0 0 0 4px #dbeafe; }
+    .invalid { border-color: #f87171 !important; }
+    .error { display: none; margin-top: 18px; background: #fef2f2; color: #b91c1c; padding: 12px 14px; border-radius: 12px; font-weight: 800; }
+
+    /* ===== BUTTONS ===== */
+    .actions { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
+    button, .button {
+      border: 0; border-radius: 999px; padding: 14px 26px; cursor: pointer; font-weight: 900;
+      text-transform: uppercase; letter-spacing: .04em; text-decoration: none;
+      display: inline-flex; align-items: center; justify-content: center;
+    }
+    .primary   { background: linear-gradient(90deg, #1d4ed8, #0f2f74); color: #fff; box-shadow: 0 12px 28px rgba(15,47,116,.25); }
+    .secondary { background: #fff; color: #1d4ed8; border: 2px solid #1d4ed8; }
+    .print     { background: #047857; color: #fff; }
+    .word      { background: #2b579a; color: #fff; }
+    .word:hover { background: #1e3f73; }
+
+    /* ===== LANGUAGE TOGGLE ===== */
+    .lang-toggle { display: flex; gap: 8px; padding: 6px; background: #f1f5f9; border-radius: 999px; border: 2px solid #e2e8f0; width: fit-content; }
+    .lang-btn {
+      padding: 10px 22px; border-radius: 999px; cursor: pointer; font-weight: 800;
+      background: transparent; color: #475569; border: 0; transition: .2s;
+      text-transform: uppercase; letter-spacing: .04em; font-size: 13px;
+    }
+    .lang-btn.active { background: linear-gradient(90deg, #1d4ed8, #0f2f74); color: #fff; box-shadow: 0 4px 12px rgba(15,47,116,.25); }
+
+    /* ===== OUTPUT SECTION ===== */
+    #outputSection { display: none; max-width: 1120px; margin: 0 auto 60px; padding: 0 20px; }
+    .dlp {
+      background: #fff; padding: 40px 48px;
+      box-shadow: 0 24px 70px rgba(0,0,0,.28);
+      border-radius: 12px; color: #111;
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .dlp .doc-title { text-align: center; font-weight: 900; letter-spacing: .5px; font-size: 18px; margin: 4px 0 18px; }
+    .dlp .small-credit { text-align: center; color: #047857; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; font-weight: 900; margin-bottom: 18px; }
+
+    /* ===== LESSON PLAN TABLE ===== */
+    table.lp { width: 100%; border-collapse: collapse; table-layout: fixed; margin-bottom: 4px; }
+    table.lp td { border: 2px solid #000; vertical-align: top; padding: 10px 12px; font-size: 14px; line-height: 1.5; background: #fff; }
+    table.lp td.label { width: 32%; border-right: 2px dashed #000 !important; font-weight: 700; font-style: italic; background: #fff; color: #111; }
+    table.lp td.label .sub { font-weight: 400; font-style: italic; font-size: 13px; margin-top: 2px; display: block; }
+    table.lp td.label .underlined { text-decoration: underline; font-style: italic; font-weight: 700; }
+    table.lp td .italic-desc { font-style: italic; font-size: 13px; margin-top: 4px; line-height: 1.4; }
+    table.lp td .italic-desc ul { list-style: disc; padding-left: 20px; margin: 4px 0 0; }
+
+    /* ===== BANNER ===== */
+    .banner { background: #d9d9d9; border: 2px solid #000; padding: 14px 16px; display: flex; gap: 18px; align-items: flex-start; margin-top: 20px; }
+    .banner h3 { font-weight: 900; font-size: 26px; min-width: 200px; margin: 0; color: #000; }
+    .banner p  { font-size: 14px; margin: 0; line-height: 1.5; color: #000; }
+
+    /* ===== MISC DLP ELEMENTS ===== */
+    .generated { display: inline-block; margin-bottom: 6px; border-radius: 999px; background: #ecfdf5; color: #047857; padding: 2px 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: .05em; }
+    .ai-note { border-left: 4px solid #9333ea; background: #faf5ff; padding: 10px 12px; color: #581c87; font-size: 13px; line-height: 1.5; }
+    .session-divider { margin-top: 18px; background: #0f2f74; color: #fff; padding: 10px 14px; border: 2px solid #000; font-weight: 900; text-transform: uppercase; letter-spacing: .04em; text-align: center; font-size: 14px; }
+    .step-box { border-left: 4px solid #1d4ed8; background: #eef2ff; padding: 10px 12px; margin-bottom: 8px; border-radius: 6px; }
+    .step-box strong { color: #0f2f74; display: block; margin-bottom: 2px; }
+    .step-box small  { color: #475569; }
+    ul, ol { margin: 4px 0 0; padding-left: 22px; }
+
+    /* ===== QUIZ STYLES ===== */
+    .quiz-section { margin-top: 24px; border: 2px solid #000; padding: 16px; background: #fff; }
+    .quiz-section h3 { background: #f4c430; color: #0f2f74; padding: 10px 14px; margin: -16px -16px 14px; font-size: 16px; text-transform: uppercase; letter-spacing: .04em; }
+    .quiz-item { margin-bottom: 14px; padding: 10px; background: #f8fafc; border-radius: 6px; border-left: 3px solid #1d4ed8; }
+    .quiz-item .qnum { font-weight: 800; color: #0f2f74; }
+    .quiz-item .options { margin: 6px 0 0; padding-left: 20px; list-style: upper-alpha; }
+    .quiz-item .options li { margin-bottom: 3px; font-size: 14px; }
+    .scenario-box { background: #fffbeb; border: 2px solid #f4c430; border-radius: 8px; padding: 12px; margin: 12px 0; }
+    .scenario-box .scenario-title { font-weight: 900; color: #92400e; margin-bottom: 6px; text-transform: uppercase; font-size: 13px; letter-spacing: .04em; }
+    .answer-key-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .answer-key-table th, .answer-key-table td { border: 2px solid #000; padding: 8px 12px; font-size: 13px; text-align: left; }
+    .answer-key-table th { background: #0f2f74; color: #fff; }
+
+    /* ===== RUBRIC ===== */
+    table.rubric { width: 100%; border-collapse: collapse; margin-top: 8px; table-layout: fixed; }
+    table.rubric th, table.rubric td { border: 2px solid #000; padding: 10px 12px; vertical-align: top; font-size: 14px; background: #fff; color: #111; word-wrap: break-word; }
+    table.rubric th { font-weight: 700; text-align: left; }
+    table.rubric tr > td:nth-child(1), table.rubric tr > th:first-child { width: 52%; }
+    table.rubric .yn { width: 10%; text-align: center; }
+    table.rubric .reason { width: 30%; min-width: 250px; }
+    table.rubric input[type="radio"] { transform: scale(1.3); cursor: pointer; }
+    table.rubric textarea { width: 100%; border: 1px solid #ccc; background: #fff; padding: 6px; font-size: 13px; outline: none; font-family: inherit; min-height: 40px; resize: vertical; height: auto; overflow: hidden; }
+    .notes-box { border: 2px solid #000; padding: 12px 14px; margin-top: 20px; }
+    .notes-box h4 { font-weight: 700; font-size: 15px; margin: 0 0 8px; }
+    .notes-box textarea { width: 100%; min-height: 240px; border: none; background: transparent; resize: vertical; font-family: inherit; font-size: 14px; outline: none; padding: 8px; line-height: 1.5; }
+    .notes-box textarea:focus { background: #f0f7ff; outline: 1px solid #2563eb; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 760px) {
+      .grid, .form-head { grid-template-columns: 1fr; display: block; }
+      .required { margin-top: 10px; }
+      .form-card { padding: 20px; }
+      table.lp td.label { width: 38%; }
+      .dlp { padding: 20px; }
+      .banner { flex-direction: column; }
+      .banner h3 { min-width: 0; font-size: 22px; }
+      table.rubric { display: block; overflow-x: auto; }
+      .lock-card { padding: 28px 20px; }
+    }
+
+    /* ===== PRINT ===== */
+    @media print {
+      @page { margin: 12mm; }
+      body { background: #fff; }
+      .hero, .panel, .actions, #statusBar { display: none !important; }
+      #outputSection { display: block !important; max-width: none; margin: 0; padding: 0; }
+      .dlp { border-radius: 0; box-shadow: none; padding: 0; }
+      .banner, .session-divider, .ai-note, .generated, .step-box, .quiz-section h3, .scenario-box {
+        print-color-adjust: exact; -webkit-print-color-adjust: exact;
+      }
+      tr, .banner, .notes-box, .quiz-item, .scenario-box { page-break-inside: avoid; }
+      ::placeholder { color: transparent; }
+      input { border: none; padding: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ================================================================
+     LOCK SCREEN
+     Shown on every visit. Teacher must enter a valid access code
+     generated by admin.html (both share the same SECRET_SALT).
+================================================================ -->
+<div id="lockScreen">
+  <div class="lock-card">
+    <span class="lock-icon">🔐</span>
+    <h2 class="lock-title">Daily Lesson Plan Maker</h2>
+    <p class="lock-subtitle">
+      This tool requires an active subscription.<br>
+      Enter your access code below to unlock full access.
+    </p>
+    <div class="price-badge">
+      ₱200.00
+      <span>2-Month Subscription Access</span>
+    </div>
+
+    <!-- Connection notice -->
+    <div class="conn-box">
+      <span class="conn-icon">🔗</span>
+      <div class="conn-text">
+        <strong>Connected to Admin Panel (admin.html)</strong>
+        Access codes are generated exclusively by your administrator using <em>admin.html</em>.
+        This app validates codes using the same shared security key — no internet required.
+      </div>
+    </div>
+
+    <div class="lock-error"  id="lockError">❌ Invalid or expired access code. Please check and try again.</div>
+    <div class="lock-success" id="lockSuccess">✅ Access granted! Loading your workspace...</div>
+
+    <div class="lock-input-wrap">
+      <input type="password" id="accessCodeInput"
+             placeholder="Enter your access code  e.g. DLP-XXXXXX-YYYYYY-ZZZZ"
+             maxlength="32" autocomplete="off" />
+      <button class="eye-btn" type="button" onclick="toggleEye()" title="Show / Hide">👁️</button>
+    </div>
+    <button class="lock-submit" onclick="submitCode()">🔓 Unlock Access</button>
+
+    <hr class="lock-divider">
+    <p class="lock-info">
+      To get an access code, contact your administrator.<br>
+      Each code is valid for <strong>2 months (61 days)</strong> from first use.<br>
+      After expiry, a new subscription (₱200) and new code are required.<br><br>
+      <strong>Innovation of Melanio R. Florino Jr., Master Teacher</strong>
+    </p>
+  </div>
+</div>
+
+<!-- ================================================================
+     EXPIRED SCREEN
+     Auto-shown when the 61-day subscription window closes.
+================================================================ -->
+<div id="expiredScreen">
+  <div class="expired-card">
+    <span class="lock-icon">⏰</span>
+    <h2 class="lock-title" style="color:#dc2626;">Subscription Expired</h2>
+    <p class="lock-subtitle">
+      Your 2-month subscription has ended.<br>
+      Please purchase a new subscription to continue.
+    </p>
+    <div class="price-badge">₱200.00 <span>Renew for another 2 Months</span></div>
+    <p style="font-size:13px;color:#64748b;margin-bottom:20px;">
+      Contact your administrator for a new access code.
+    </p>
+    <button class="lock-submit" onclick="showLockScreen()" style="width:100%;margin-bottom:0;">
+      🔑 Enter New Access Code
+    </button>
+    <p class="lock-info" style="margin-top:14px;">
+      <strong>Innovation of Melanio R. Florino Jr., Master Teacher</strong>
+    </p>
+  </div>
+</div>
+
+<!-- ================================================================
+     STATUS BAR  — sticky top bar shown while app is unlocked
+================================================================ -->
+<div id="statusBar">
+  <div class="status-inner">
+    <div class="status-info">
+      <span>📅 Daily Lesson Plan Maker</span>
+      <span class="status-badge" id="statusBadge">Active</span>
+      <span id="statusExpiry" style="font-size:12px;opacity:.85;"></span>
+    </div>
+    <button class="logout-btn" onclick="logOut()">🔒 Lock / Log Out</button>
+  </div>
+</div>
+
+<!-- ================================================================
+     MAIN APPLICATION  — hidden until a valid code is entered
+================================================================ -->
+<div id="mainApp">
+
+  <header class="hero">
+    <div class="wrap">
+      <p class="kicker">Single HTML — Subscription Required</p>
+      <h1 id="heroTitle">Daily Lesson Session Plan Maker</h1>
+      <p class="lead" id="heroLead">A standalone Detailed Lesson Plan generator for Philippine Basic Education with daily quizzes and weekly PISA-like assessment.</p>
+      <p class="credit" id="heroCredit">Citation: The HTML generator is an innovation of Melanio R. Florino Jr., Master Teacher.</p>
+    </div>
+  </header>
+
+  <section class="panel" id="inputPanel">
+    <form class="form-card" id="dlpForm">
+      <div class="form-head">
+        <div>
+          <h2 id="formTitle">Teacher Input Section</h2>
+          <p class="hint" id="formHint">Type the basic lesson information. References, AI declaration, Learning Experience, Assessment with daily quizzes &amp; PISA-like weekly assessment, Ways Forward, Rubric, and Coaching Notes will be generated.</p>
+        </div>
+        <div class="required" id="reqLabel">Required fields are marked *</div>
+      </div>
+
+      <!-- Language Toggle -->
+      <div style="margin-bottom:22px;">
+        <span style="display:block;margin-bottom:10px;font-size:14px;font-weight:800;color:#334155;" id="langLabel">Output Language / Wikang Gagamitin *</span>
+        <div class="lang-toggle">
+          <button type="button" class="lang-btn active" id="btnEnglish" onclick="setLanguage('english')">English</button>
+          <button type="button" class="lang-btn"        id="btnFilipino" onclick="setLanguage('filipino')">Filipino (Banghay Aralin)</button>
+        </div>
+      </div>
+
+      <div class="grid">
+        <label><span id="lblTitle">Lesson Title *</span><input id="lessonTitle" placeholder="Example: The Water Cycle" required /></label>
+        <label><span id="lblArea">Learning Area/s *</span><input id="learningArea" placeholder="Example: Science" required /></label>
+        <label><span id="lblTeacher">Name of Teacher/s *</span><input id="teacherName" placeholder="Example: Ms. Maria Santos" required /></label>
+        <label><span id="lblGrade">Grade Level and Section *</span><input id="gradeSection" placeholder="Example: Grade 5 - Sampaguita" required /></label>
+        <label><span id="lblSessions">No. of Sessions *</span>
+          <select id="numSessions">
+            <option value="1">1 Session</option>
+            <option value="2">2 Sessions</option>
+            <option value="3">3 Sessions</option>
+            <option value="4">4 Sessions</option>
+            <option value="5" selected>5 Sessions</option>
+          </select>
+        </label>
+        <label><span id="lblMelcs">MELCs *</span><textarea id="melcs" placeholder="Paste the Most Essential Learning Competency." required></textarea></label>
+        <label><span id="lblContent">Content Standards *</span><textarea id="contentStandards" placeholder="Paste the content standard." required></textarea></label>
+        <label><span id="lblPerformance">Performance Standards *</span><textarea id="performanceStandards" placeholder="Paste the performance standard." required></textarea></label>
+      </div>
+
+      <p class="error" id="errorBox">Please fill in all required fields before generating.</p>
+      <div class="actions">
+        <button class="primary" type="submit" id="generateBtn">Generate Full DLP</button>
+      </div>
+    </form>
+  </section>
+
+  <section id="outputSection">
+    <div class="actions">
+      <button class="secondary" type="button" id="editBtn"
+              onclick="document.getElementById('inputPanel').scrollIntoView({behavior:'smooth'})">
+        Edit Inputs
+      </button>
+      <button class="word" type="button" id="wordBtn" onclick="downloadAsWord()">
+        <svg style="width:18px;height:18px;margin-right:8px;vertical-align:middle;" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 2a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6H6zm7 1.5L18.5 9H13V3.5zM8 13h8v1.5H8V13zm0 3h5v1.5H8V16zm0-6h8v1.5H8V10z"/>
+        </svg>
+        Save as Microsoft Word
+      </button>
+      <button class="print" type="button" id="printBtn" onclick="window.print()">Print / Save PDF</button>
+    </div>
+    <article class="dlp" id="dlpOutput"></article>
+  </section>
+
+</div><!-- /#mainApp -->
+
+<script>
+/* ================================================================
+   SUBSCRIPTION / ACCESS CODE SYSTEM
+   ----------------------------------------------------------------
+   How it connects to admin.html:
+   • admin.html generates codes using:
+       code = "DLP-" + randomPart + "-" + expiryB36 + "-" + checksum
+       checksum = simpleHash("DLP-" + rnd + "-" + exp36 + "-" + SECRET_SALT).substr(0,4)
+   • index.html (this file) validates using the SAME SECRET_SALT
+     and SAME simpleHash function — so only admin-generated codes work.
+   • On first valid entry, activation timestamp saved to localStorage.
+   • Subscription window = 61 days from first activation.
+   • After 61 days → app locks automatically → expired screen shown.
+   • Teacher must get a new code from admin to continue.
+   ----------------------------------------------------------------
+   SECRET_SALT must be IDENTICAL in both index.html and admin.html.
+================================================================ */
+var SECRET_SALT   = 'DLP-FLORINO-2025-SALT'; // ← must match admin.html
+var TWO_MONTHS_MS = 61 * 24 * 60 * 60 * 1000; // 61 days in milliseconds
+var STORAGE_KEY   = 'dlp_subscription';
+var SESSION_KEY   = 'dlp_session_active';
+
+/* --- Hash function (identical to admin.html) --- */
+function simpleHash(str) {
+  var h = 0;
+  for (var i = 0; i < str.length; i++) {
+    h = ((h << 5) - h) + str.charCodeAt(i);
+    h = h & h;
+  }
+  return Math.abs(h).toString(36).toUpperCase();
+}
+
+/* --- Code validation (mirrors admin.html code generation) --- */
+function validateCode(raw) {
+  var code = raw.trim().toUpperCase().replace(/\s/g, '');
+  if (!code) return { valid: false, reason: 'empty' };
+  // Expected format: DLP-XXXXXX-YYYYYYYY-ZZZZ
+  var parts = code.split('-');
+  if (parts.length < 4 || parts[0] !== 'DLP') return { valid: false, reason: 'format' };
+  var rnd = parts[1], exp36 = parts[2], chk = parts[3];
+  // Recompute checksum using same formula as admin.html
+  var expected = simpleHash('DLP-' + rnd + '-' + exp36 + '-' + SECRET_SALT).substring(0, 4);
+  if (expected !== chk) return { valid: false, reason: 'invalid' };
+  // Check admin-set activation deadline
+  var adminExpiry = parseInt(exp36, 36);
+  if (Date.now() > adminExpiry) return { valid: false, reason: 'code_expired' };
+  return { valid: true, code: code };
+}
+
+/* --- localStorage helpers --- */
+function getStoredSub() {
+  try { var r = localStorage.getItem(STORAGE_KEY); return r ? JSON.parse(r) : null; }
+  catch(e) { return null; }
+}
+function storeSub(code, activatedAt) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    code: code,
+    activatedAt: activatedAt,
+    expiresAt: activatedAt + TWO_MONTHS_MS
+  }));
+}
+
+/* --- Main subscription check --- */
+function checkSubscription(raw) {
+  var v = validateCode(raw);
+  if (!v.valid) return { ok: false, reason: v.reason };
+  var stored = getStoredSub();
+  // Same code already on record — check if still within 61-day window
+  if (stored && stored.code === v.code) {
+    if (Date.now() > stored.expiresAt)
+      return { ok: false, reason: 'sub_expired', expiresAt: stored.expiresAt };
+    return { ok: true, expiresAt: stored.expiresAt };
+  }
+  // New valid code → activate now, start 61-day timer
+  var now = Date.now();
+  storeSub(v.code, now);
+  return { ok: true, expiresAt: now + TWO_MONTHS_MS };
+}
+
+/* --- Utility --- */
+function daysLeft(expiresAt) {
+  return Math.max(0, Math.ceil((expiresAt - Date.now()) / 86400000));
+}
+function fmtDate(ts) {
+  var d  = new Date(ts);
+  var mo = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return mo[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+}
+
+/* --- Screen controllers --- */
+function showApp(expiresAt) {
+  document.getElementById('lockScreen').style.display    = 'none';
+  document.getElementById('expiredScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display       = 'block';
+  document.getElementById('statusBar').style.display     = 'block';
+  sessionStorage.setItem(SESSION_KEY, '1');
+  var dl    = daysLeft(expiresAt);
+  var badge = document.getElementById('statusBadge');
+  document.getElementById('statusExpiry').textContent =
+    'Subscription expires: ' + fmtDate(expiresAt) +
+    ' (' + dl + ' day' + (dl !== 1 ? 's' : '') + ' remaining)';
+  if      (dl <= 3)  { badge.textContent = '🔴 Expires in ' + dl + ' day(s)'; badge.className = 'status-badge danger';  }
+  else if (dl <= 7)  { badge.textContent = '⚠️ Expiring Soon';                badge.className = 'status-badge warning'; }
+  else               { badge.textContent = '✅ Active';                        badge.className = 'status-badge';         }
+}
+function showLockScreen() {
+  document.getElementById('lockScreen').style.display    = 'flex';
+  document.getElementById('expiredScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display       = 'none';
+  document.getElementById('statusBar').style.display     = 'none';
+  document.getElementById('accessCodeInput').value       = '';
+  document.getElementById('lockError').style.display     = 'none';
+  document.getElementById('lockSuccess').style.display   = 'none';
+  sessionStorage.removeItem(SESSION_KEY);
+}
+function showExpiredScreen() {
+  document.getElementById('lockScreen').style.display    = 'none';
+  document.getElementById('expiredScreen').style.display = 'flex';
+  document.getElementById('mainApp').style.display       = 'none';
+  document.getElementById('statusBar').style.display     = 'none';
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+/* --- User actions --- */
+function logOut() {
+  if (confirm('Lock the application? You will need to enter your access code again.')) {
+    sessionStorage.removeItem(SESSION_KEY);
+    showLockScreen();
+  }
+}
+function toggleEye() {
+  var inp = document.getElementById('accessCodeInput');
+  inp.type = inp.type === 'password' ? 'text' : 'password';
+}
+function submitCode() {
+  var code  = document.getElementById('accessCodeInput').value;
+  var errEl = document.getElementById('lockError');
+  var sucEl = document.getElementById('lockSuccess');
+  errEl.style.display = 'none';
+  sucEl.style.display = 'none';
+  if (!code.trim()) {
+    errEl.textContent = '❌ Please enter your access code.';
+    errEl.style.display = 'block'; return;
+  }
+  var result = checkSubscription(code);
+  if (result.ok) {
+    sucEl.style.display = 'block';
+    setTimeout(function() { showApp(result.expiresAt); }, 1200);
+  } else {
+    var msg = '❌ Invalid or expired access code. Please check and try again.';
+    if (result.reason === 'sub_expired')  msg = '⏰ Your subscription expired on ' + fmtDate(result.expiresAt) + '. Please renew.';
+    if (result.reason === 'code_expired') msg = '⏰ This access code has already expired. Please get a new code from your administrator.';
+    errEl.textContent   = msg;
+    errEl.style.display = 'block';
+    if (result.reason === 'sub_expired') setTimeout(showExpiredScreen, 1800);
+  }
+}
+
+/* Enter key on code input */
+document.getElementById('accessCodeInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') submitCode();
+});
+
+/* On page load — restore session if valid */
+(function initCheck() {
+  var stored = getStoredSub();
+  if (stored) {
+    if (Date.now() > stored.expiresAt) { showExpiredScreen(); return; }
+    if (sessionStorage.getItem(SESSION_KEY) === '1') { showApp(stored.expiresAt); return; }
+  }
+  showLockScreen();
+})();
+
+/* ================================================================
+   LANGUAGE STATE
+================================================================ */
+var currentLang = 'english';
+
+var ui = {
+  english: {
+    heroTitle:   'Daily Lesson Session Plan Maker',
+    heroLead:    'A standalone Detailed Lesson Plan generator for Philippine Basic Education with daily quizzes and weekly PISA-like assessment.',
+    heroCredit:  'Citation: The HTML generator is an innovation of Melanio R. Florino Jr., Master Teacher.',
+    formTitle:   'Teacher Input Section',
+    formHint:    'Type the basic lesson information. References, AI declaration, Learning Experience, Assessment with daily quizzes & PISA-like weekly assessment, Ways Forward, Rubric, and Coaching Notes will be generated.',
+    reqLabel:    'Required fields are marked *',
+    langLabel:   'Output Language / Wikang Gagamitin *',
+    lblTitle:    'Lesson Title *',      lblArea:       'Learning Area/s *',
+    lblTeacher:  'Name of Teacher/s *', lblGrade:      'Grade Level and Section *',
+    lblSessions: 'No. of Sessions *',   lblMelcs:      'MELCs *',
+    lblContent:  'Content Standards *', lblPerformance:'Performance Standards *',
+    errorBox:    'Please fill in all required fields before generating.',
+    generateBtn: 'Generate Full DLP',   editBtn: 'Edit Inputs', printBtn: 'Print / Save PDF'
+  },
+  filipino: {
+    heroTitle:   'Tagagawa ng Banghay Aralin',
+    heroLead:    'Isang standalone na tagagawa ng Detalyadong Banghay Aralin para sa Batayang Edukasyon ng Pilipinas, kasama ang araw-araw na pagsusulit at lingguhang PISA-like na pagtatasa.',
+    heroCredit:  'Sipi: Ang HTML generator ay inobasyon ni Melanio R. Florino Jr., Master Teacher.',
+    formTitle:   'Seksyon ng Datos ng Guro',
+    formHint:    'I-type ang batayang impormasyon ng aralin. Awtomatikong gagawa ang sistema ng mga sanggunian, deklarasyon ng AI, Karanasan sa Pagkatuto, Pagtatasa na may araw-araw na pagsusulit at lingguhang PISA-like, Mga Susunod na Hakbang, Rubrik, at Tala para sa Coaching.',
+    reqLabel:    'Ang mga kinakailangang impormasyon ay may marka na *',
+    langLabel:   'Wikang Gagamitin / Output Language *',
+    lblTitle:    'Pamagat ng Aralin *',                   lblArea:       'Asignatura *',
+    lblTeacher:  'Pangalan ng Guro *',                    lblGrade:      'Antas at Pangkat *',
+    lblSessions: 'Bilang ng Sesyon *',                    lblMelcs:      'MELCs (Pinakamahalagang Kakayahan) *',
+    lblContent:  'Pamantayang Pangnilalaman *',           lblPerformance:'Pamantayan sa Pagganap *',
+    errorBox:    'Mangyaring punan ang lahat ng kinakailangang impormasyon bago bumuo.',
+    generateBtn: 'Bumuo ng Buong Banghay Aralin',         editBtn: 'I-edit ang Datos', printBtn: 'I-print / I-save bilang PDF'
+  }
+};
+
+function setLanguage(lang) {
+  currentLang = lang;
+  document.getElementById('btnEnglish').classList.toggle('active', lang === 'english');
+  document.getElementById('btnFilipino').classList.toggle('active', lang === 'filipino');
+  var t = ui[lang];
+  for (var key in t) { var el = document.getElementById(key); if (el) el.textContent = t[key]; }
+  document.documentElement.lang = lang === 'filipino' ? 'fil' : 'en';
+}
+
+/* ================================================================
+   FULL BILINGUAL TEMPLATE STRINGS
+================================================================ */
+var T = {
+  english: {
+    docTitle:'LESSON PLAN TEMPLATE',
+    credit:'Innovation of Melanio R. Florino Jr., Master Teacher',
+    lessonTitle:'Lesson Title', learningArea:'Learning Area/s', teacherName:'Name of Teacher/s',
+    gradeSection:'Grade Level and Section', noSessions:'No. of Sessions',
+    references:'References', refsSub:'(books, websites, toolkits, etc.)',
+    aiDecl:'Declaration of AI use',
+    aiDeclSub:'Cite how AI was used in the formulation of the lesson plan. See DO 3 s.2026 Annex A.',
+    aiNote:'AI-assisted drafting was used to organize objectives, activities, assessment items (daily quizzes & PISA-like weekly assessment), differentiation, and references. The teacher-user must review, validate, contextualize, and take professional responsibility for the final lesson plan and all assessment items. The HTML generator used for this output is cited as an innovation of Melanio R. Florino Jr., Master Teacher.',
+    intentions:'Intentions.',
+    intentionsDesc:'Meaningful learning experiences are anchored in how we frame them. Start by deciding what you want learners to master by the end of the lesson – keep it clear and simple.<br>Remember: Understanding your learners\' evolving context and designing around it ensure that your lessons connect with and are relevant to them.',
+    lcStandards:'Learning Competency and Curriculum Standards:',
+    lcStandardsDesc:'Write the competency/ies from the curriculum that we are targeting, and the content or performance standards applicable to the sessions.',
+    objectives:'Learning Objectives:',
+    objectivesDesc:'Write the smaller knowledge, skills, or tasks from the competency that the learners will work on and be able to show by the end of the sessions.',
+    learnerContext:'Learner Context:',
+    learnerContextDesc:'Write your observations of your learners, and how they have been performing or responding to learning experiences recently. Include strengths, interests, and possible barriers to learning.',
+    learnerContextText:'Grade {grade} learners benefit from concrete examples, structured collaboration, and visible learning supports. Activities include modeling, peer interaction, formative checks, and flexible outputs that respond to varied abilities, learning styles, and contexts.',
+    atEndOf:'At the end of the session sequence, learners are expected to:',
+    learningExp:'Learning Experience.',
+    learningExpDesc:'A learning experience is like a thoughtfully designed journey. Each activity and interaction builds towards meaningful understanding and growth. Identify activities and interactions to help learners gain knowledge, skills, or understanding in a purposeful way.',
+    preLesson:'Pre-Lesson:', preLessonDesc:'Describe how you will help the learners get ready for the lesson.',
+    preLessonText:'Greet learners and check well-being. Set classroom routines and expectations. Activate prior knowledge through a KWL prompt or quick recall related to {topic}. Share the learning objectives in learner-friendly language.',
+    flow:'Flow:',
+    flowDesc:'Describe the activities that you can implement in 1 or more sessions to meet the learning objectives.<br><br>Apply the Learning Design Principles by thinking about how to:<ul><li>make the objectives clear for the learners</li><li>guide learners before letting them try the task on their own</li><li>check the state of the learners\' well-being, understanding, and mastery over the lesson</li><li>connect today\'s new concepts to past competencies</li><li>encourage collaboration among learners</li><li>invite learners to reflect on why this matters to them</li><li>ensure inclusion for learners\' varied abilities, learning styles, and contexts</li></ul>',
+    flowIntro:'Across <strong>{n} session{s}</strong>, the following flow applies the Learning Design Principles:',
+    sessionLabel:'Session {n} of {total}: ',
+    steps:{
+      review:     ['Review / Prior Knowledge',          '8-10 minutes'],
+      motivation: ['Motivation / Hook',                 '7 minutes'],
+      instruction:['Lesson Proper / Instruction',       '18-20 minutes'],
+      activity:   ['Learning Activity (Collaboration)', '15 minutes'],
+      assessment: ['Check for Understanding',           '10 minutes'],
+      closure:    ['Closure, Reflection & Assignment',  '5-10 minutes']
+    },
+    learningResources:'Learning Resources:',
+    learningResourcesDesc:'List down the learning resources that will help you reach your objectives. Ensure that they are available and inclusive.<br><br>Include options and alternatives in case of emergencies.',
+    integration:'Opportunities for integration:',
+    integrationDesc:'Write down any possibilities to meaningfully integrate another learning area, special topic, or technology. Write N/A if none.',
+    assessment:'Assessment.',
+    assessmentDesc:'Assessments reveal what learners have gained and what they still need help with. These are helpful in providing you with information to guide your future instruction throughout the entire session.',
+    formative:'Formative Assessment:',
+    formativeDesc:'Create a task, activity or questions to evaluate learning and provide feedback every now and then. Include ways for learners to ask for guidance or support throughout each session.<br><br>Remember to provide appropriate accommodations so all learners can demonstrate their understanding (e.g., varied response formats, small group options, visual or auditory supports)',
+    waysForward:'Ways Forward.',
+    waysForwardDesc:'Meaningful learning can also happen beyond the classroom – for both the learners and the teacher.<br>Pause and reflect on what happened today.',
+    extended:'Extended learning opportunities:',
+    extendedDesc:'Suggest other learning experiences outside the classroom/class hours that learners may want to access to reinforce what they have learned, to spark their curiosities further, or that may provide them support in their areas of difficulty.',
+    reflections:'Reflections:',
+    reflectionsDesc:'Think about what you need to change for the next session based on what happened today. Is there something the learners are interested in exploring?<br><br>Are there some things you would like to share with your co-teachers, parents, or school leaders about your classroom experience? What would you like your instructional coach to help you with?',
+    rubricTitle:'RUBRIC FOR LESSON PLANNING SELF-CHECK AND/OR PEER COACHING',
+    canSay:'I can say that in my lesson plan...', yes:'Yes', notYet:'Not Yet',
+    why:'Why? / What makes it effective?', addNote:'Add note/expansion...',
+    notesTitle:'Notes for my instructional coaching session:',
+    notesPlaceholder:'Write notes for your instructional coaching session...',
+    generated:'Generated',
+    assessSection:'DAILY QUIZZES AND WEEKLY PISA-LIKE ASSESSMENT',
+    sessionQuiz:'Lesson Session {n} Quiz', unpackedLC:'Unpacked LC',
+    weeklyPISA:'Weekly PISA-Like Assessment (30 Items)', scenario:'Scenario {n}',
+    answerKey:'Quiz Answer Key', quizCol:'Quiz', keyCol:'Answers', correct:'Correct Answer',
+    rubricReasons:[
+      'The MELCs, Content Standards, and Performance Standards are explicitly unpacked into clear, observable daily objectives.',
+      'Objectives directly drive the review, motivation, instruction, collaborative activities, and assessment formats throughout all sessions.',
+      'Step-by-step teacher prompts, time allotments, and specific collaboration structures are detailed for seamless replication.',
+      'Activities incorporate inquiry-based scaffolding (KWL, modeling, collaborative synthesis) ensuring active cognitive engagement.',
+      'Meaningfully connects cross-curricular themes, ICT tools, values (Bayanihan), and real-world relevance (DRRR/Health).',
+      'Provides explicit low-tech alternatives, varied formative response formats, and flexible group structures.',
+      'Formative checks anchor every session, complemented by structured daily quizzes and HOTS-focused PISA scenarios.',
+      'Items directly measure unpacked objectives using clear progression from factual recall to evaluative reasoning.',
+      'Defines clear pathways for home-based exploration, remediation for struggling learners, and enrichment.'
+    ],
+    coachingNotesDefault:"Instructional Coaching Summary & Focus Areas:\n\n1. Alignment Check: The lesson sequence demonstrates strong horizontal alignment. The unpacked learning objectives accurately reflect the target MELC and directly dictate the flow of daily formative checks and the weekly summative PISA-like assessment.\n\n2. Pedagogical Strengths: Active integration of the 7 Learning Design Principles is clearly visible. The gradual release of responsibility—from modeling essential vocabulary to collaborative tasks—fosters learner agency. Values integration (Bayanihan and Pakikipagkapwa) beautifully contextualizes the content.\n\n3. Assessment Rigor: The daily 10-item quizzes provide immediate, measurable diagnostic data. Furthermore, the 30-item PISA-like assessment effectively elevates cognitive demand, guiding learners to analyze data, evaluate evidence, and propose justified community-based solutions.\n\n4. Recommended Focus for Implementation: During class observations, let us focus on tracking how effectively the varied response formats (oral, drawn, written) accommodate diverse learning profiles, and ensure struggling learners receive immediate scaffolding during the collaborative segments.",
+    unpackedDay:[
+      'Identify and define key terms and concepts related to {topic}.',
+      'Describe and explain the processes or principles involved in {topic}.',
+      'Apply concepts of {topic} to solve simple, structured tasks.',
+      'Analyze relationships, patterns, or causes within {topic}.',
+      'Evaluate and synthesize all weekly competencies through real-world application of {topic}.'
+    ]
+  },
+  filipino: {
+    docTitle:'TEMPLATE NG BANGHAY ARALIN',
+    credit:'Inobasyon ni Melanio R. Florino Jr., Master Teacher',
+    lessonTitle:'Pamagat ng Aralin', learningArea:'Asignatura', teacherName:'Pangalan ng Guro',
+    gradeSection:'Antas at Pangkat', noSessions:'Bilang ng Sesyon',
+    references:'Mga Sanggunian', refsSub:'(mga aklat, websites, toolkits, atbp.)',
+    aiDecl:'Deklarasyon ng Paggamit ng AI',
+    aiDeclSub:'Banggitin kung paano ginamit ang AI sa pagbubuo ng banghay aralin. Tingnan ang DO 3 s.2026 Annex A.',
+    aiNote:'Ginamit ang tulong ng AI sa pag-organisa ng mga layunin, gawain, mga aytem ng pagtatasa (araw-araw na pagsusulit at lingguhang PISA-like), pagkakaiba-iba, at mga sanggunian. Ang guro ay dapat magsuri, magpatibay, mag-konteksto, at magkaroon ng propesyonal na pananagutan sa huling banghay aralin at lahat ng aytem ng pagsusulit. Ang HTML generator na ginamit ay sipi bilang inobasyon ni Melanio R. Florino Jr., Master Teacher.',
+    intentions:'Mga Layunin.',
+    intentionsDesc:'Ang makahulugang karanasan sa pagkatuto ay nakaangkla sa kung paano natin ito binubuo. Magsimula sa pagtukoy kung ano ang nais mong matutunan ng mga mag-aaral sa katapusan ng aralin – panatilihin itong malinaw at simple.<br>Tandaan: Ang pag-unawa sa konteksto ng mga mag-aaral ay nagsisiguro na ang mga aralin ay konektado at may kaugnayan sa kanila.',
+    lcStandards:'Kakayahan sa Pagkatuto at Pamantayang Pangkurikulum:',
+    lcStandardsDesc:'Isulat ang mga kakayahan mula sa kurikulum, at ang nilalaman o pamantayan sa pagganap na angkop sa mga sesyon.',
+    objectives:'Mga Layunin sa Pagkatuto:',
+    objectivesDesc:'Isulat ang mas maliit na kaalaman, kasanayan, o gawain mula sa kakayahan na pagtutuunan ng mga mag-aaral at maipakikita sa katapusan ng mga sesyon.',
+    learnerContext:'Konteksto ng Mag-aaral:',
+    learnerContextDesc:'Isulat ang iyong mga obserbasyon sa mga mag-aaral, at kung paano sila tumutugon sa karanasan sa pagkatuto. Isama ang mga lakas, interes, at posibleng hadlang sa pagkatuto.',
+    learnerContextText:'Ang mga mag-aaral sa Baitang {grade} ay nakikinabang sa mga konkretong halimbawa, organisadong pakikipagtulungan, at nakikitang suporta sa pagkatuto. Kasama sa mga gawain ang pagmomodelo, pakikipag-ugnayan sa kapwa, formative checks, at flexible na output na tumutugon sa iba\'t ibang kakayahan, estilo ng pagkatuto, at konteksto.',
+    atEndOf:'Sa katapusan ng pagkakasunod-sunod ng mga sesyon, inaasahan na ang mga mag-aaral ay:',
+    learningExp:'Karanasan sa Pagkatuto.',
+    learningExpDesc:'Ang karanasan sa pagkatuto ay tulad ng isang mahusay na dinisenyong paglalakbay. Ang bawat gawain at pakikipag-ugnayan ay nagtatayo tungo sa makahulugang pag-unawa at paglago.',
+    preLesson:'Bago ang Aralin:', preLessonDesc:'Ilarawan kung paano mo ihahanda ang mga mag-aaral para sa aralin.',
+    preLessonText:'Batiin ang mga mag-aaral at suriin ang kanilang kalagayan. Itakda ang mga gawi at inaasahan sa silid-aralan. Buhayin ang nakaraang kaalaman sa pamamagitan ng KWL na may kaugnayan sa {topic}. Ibahagi ang mga layunin sa pagkatuto sa wikang naiintindihan ng mga mag-aaral.',
+    flow:'Daloy:',
+    flowDesc:'Ilarawan ang mga gawain na maaaring ipatupad sa 1 o higit pang sesyon upang maabot ang mga layunin sa pagkatuto.<br><br>Isaalang-alang ang Mga Prinsipyo sa Disenyo ng Pagkatuto:<ul><li>linawin ang mga layunin para sa mga mag-aaral</li><li>gabayan ang mga mag-aaral bago hayaang gawin nila mismo</li><li>suriin ang kalagayan, pag-unawa, at kahusayan ng mga mag-aaral</li><li>ikonekta ang bagong konsepto sa nakaraang kakayahan</li><li>hikayatin ang pakikipagtulungan</li><li>imbitahan ang mga mag-aaral na magnilay kung bakit ito mahalaga</li><li>tiyakin ang inklusyon para sa iba\'t ibang konteksto</li></ul>',
+    flowIntro:'Sa loob ng <strong>{n} sesyon</strong>, ang sumusunod na daloy ay nag-aaplay ng Mga Prinsipyo sa Disenyo ng Pagkatuto:',
+    sessionLabel:'Sesyon {n} ng {total}: ',
+    steps:{
+      review:     ['Balik-aral / Nakaraang Kaalaman',         '8-10 minuto'],
+      motivation: ['Pagganyak / Hook',                         '7 minuto'],
+      instruction:['Pormal na Aralin / Pagtuturo',             '18-20 minuto'],
+      activity:   ['Gawain sa Pagkatuto (Pakikipagtulungan)',   '15 minuto'],
+      assessment: ['Pagsusuri ng Pag-unawa',                   '10 minuto'],
+      closure:    ['Pagtatapos, Pagninilay at Takdang-Aralin', '5-10 minuto']
+    },
+    learningResources:'Mga Kagamitan sa Pagkatuto:',
+    learningResourcesDesc:'Ilista ang mga kagamitan na makakatulong upang maabot ang mga layunin. Tiyakin na sila ay magagamit at inklusibo.',
+    integration:'Mga Pagkakataon para sa Integrasyon:',
+    integrationDesc:'Isulat ang mga posibilidad upang makahulugang i-integrate ang ibang asignatura, espesyal na paksa, o teknolohiya. Isulat ang N/A kung wala.',
+    assessment:'Pagtatasa.',
+    assessmentDesc:'Ang mga pagtatasa ay nagpapakita kung ano ang natutunan ng mga mag-aaral at kung saan sila kailangan ng tulong.',
+    formative:'Formative na Pagtatasa:',
+    formativeDesc:'Bumuo ng gawain o tanong upang masuri ang pagkatuto at magbigay ng feedback. Magbigay ng angkop na akomodasyon upang maipakita ng lahat ng mag-aaral ang kanilang pag-unawa.',
+    waysForward:'Mga Susunod na Hakbang.',
+    waysForwardDesc:'Ang makahulugang pagkatuto ay maaaring mangyari sa labas ng silid-aralan – para sa mga mag-aaral at sa guro.<br>Magnilay sa nangyari ngayon.',
+    extended:'Mga Pinalawak na Pagkakataon sa Pagkatuto:',
+    extendedDesc:'Magmungkahi ng iba pang karanasan sa pagkatuto sa labas ng oras ng klase upang palakasin ang natutunan o magbigay ng suporta sa mga lugar na may kahirapan.',
+    reflections:'Pagninilay:',
+    reflectionsDesc:'Pag-isipan kung ano ang kailangang baguhin sa susunod na sesyon. May mga bagay ba na nais mong ibahagi sa iyong mga kapwa-guro, magulang, o pinuno ng paaralan?',
+    rubricTitle:'RUBRIK PARA SA SARILING PAGSUSURI AT/O PEER COACHING NG BANGHAY ARALIN',
+    canSay:'Maaari kong sabihin na sa aking banghay aralin...', yes:'Oo', notYet:'Hindi Pa',
+    why:'Bakit? / Paano ito nagiging epektibo?', addNote:'Magdagdag ng paliwanag...',
+    notesTitle:'Mga tala para sa aking sesyon ng instructional coaching:',
+    notesPlaceholder:'Magsulat ng mga tala para sa iyong sesyon ng instructional coaching...',
+    generated:'Nilikha',
+    assessSection:'ARAW-ARAW NA PAGSUSULIT AT LINGGUHANG PISA-LIKE NA PAGTATASA',
+    sessionQuiz:'Pagsusulit sa Sesyon {n}', unpackedLC:'Unpacked LC',
+    weeklyPISA:'Lingguhang PISA-Like na Pagtatasa (30 Aytem)', scenario:'Senaryo {n}',
+    answerKey:'Susi sa Pagsagot', quizCol:'Pagsusulit', keyCol:'Mga Sagot', correct:'Tamang Sagot',
+    rubricReasons:[
+      'Ang mga MELC at pamantayan ay malinaw na nahimay sa mga tiyak at nasusukat na pang-araw-araw na layunin.',
+      'Ang mga layunin ang direktang nagpapatakbo sa balik-aral, pagganyak, pagtuturo, at mga pormat ng pagtatasa sa lahat ng sesyon.',
+      'Ang mga hakbang, itinakdang oras, at istruktura ng pangkatang gawain ay detalyado para sa madaling pagpapatupad ng ibang guro.',
+      'Nagtataglay ang mga gawain ng inquiry-based scaffolding (KWL, pagmomodelo, sintesis) upang matiyak ang aktibong pag-iisip.',
+      'Makabuluhang nag-uugnay ng iba\'t ibang asignatura, kagamitang ICT, mga pagpapahalaga (Bayanihan), at totoong sitwasyon sa buhay.',
+      'Nagbibigay ng mga alternatibong low-tech, iba\'t ibang paraan ng pagtugon, at pleksibleng pagpapangkat para sa lahat ng uri ng mag-aaral.',
+      'Ang mga formative check ay nakaangkla sa bawat sesyon, suportado ng mga araw-araw na pagsusulit at PISA-like na mga senaryo na nakatuon sa HOTS.',
+      'Ang mga aytem ay direktang sumusukat sa mga layunin gamit ang malinaw na progresyon mula sa simpleng pag-alala hanggang sa malalim na pagsusuri.',
+      'Nagtatakda ng malinaw na mga hakbang para sa pag-aaral sa tahanan, remediation para sa mga nahihirapan, at enrichment para sa mga advanced.'
+    ],
+    coachingNotesDefault:"Buod ng Instructional Coaching at mga Puntos na Pagtutuunan:\n\n1. Pagsusuri ng Pagkakaayon (Alignment Check): Ang serye ng mga sesyon ay nagpapakita ng matibay na horizontal alignment. Ang mga nahimay na layunin ay tumpak na sumasalamin sa target na MELC at direktang nagpapatakbo sa daloy ng mga araw-araw na formative check at lingguhang PISA-like na pagtatasa.\n\n2. Kalakasan sa Pagtuturo: Kitang-kita ang aktibong integrasyon ng 7 Prinsipyo sa Disenyo ng Pagkatuto. Ang unti-unting paglilipat ng responsibilidad—mula sa pagmomodelo hanggang sa pangkatang gawain—ay nagpapalakas ng inisyatibo ng mag-aaral. Ang paglalapat ng pagpapahalagang Pilipino (Bayanihan at Pakikipagkapwa) ay nagbibigay ng malalim na konteksto.\n\n3. Linaw at Tibay ng Pagtatasa: Ang araw-araw na 10-aytem na pagsusulit ay nagbibigay ng agarang datos sa pag-unawa. Bukod dito, ang 30-aytem na PISA-like na pagtatasa ay mabisang nagtataas ng antas ng pag-iisip (HOTS), na gumagabay sa mga mag-aaral na magsuri ng datos at magmungkahi ng makatwirang solusyon sa komunidad.\n\n4. Rekomendasyon sa Pagpapatupad: Sa aktwal na obserbasyon ng klase, ating tutukan kung paano epektibong natutugunan ng iba't ibang format ng pagtugon ang magkakaibang pangangailangan ng mag-aaral, at tiyakin na ang mga nahihirapang mag-aaral ay nakatatanggap ng agarang gabay habang nagpapatuloy ang pangkatang gawain.",
+    unpackedDay:[
+      'Tukuyin at ipaliwanag ang mga susing termino at konsepto na may kaugnayan sa {topic}.',
+      'Ilarawan at ipaliwanag ang mga proseso o prinsipyo na sangkot sa {topic}.',
+      'I-apply ang mga konsepto ng {topic} sa pagsasagot ng mga simpleng gawain.',
+      'Suriin ang mga relasyon, pattern, o sanhi sa loob ng {topic}.',
+      'Suriin at pagsamahin ang lahat ng lingguhang kakayahan sa pamamagitan ng totoong-mundo na aplikasyon ng {topic}.'
+    ]
+  }
+};
+
+/* ================================================================
+   SUBJECT DATA — 7 subjects × 2 languages
+================================================================ */
+var subjectData = {
+  english: {
+    science: { refs:["DepEd Science Learner's Material","DepEd Science Teacher's Guide and K to 12 Curriculum Guide","DOST-SEI learning resources","Khan Academy Science and CK-12 Foundation"], strategies:["inquiry","demonstration","investigation","data discussion"] },
+    math:    { refs:["DepEd Mathematics Learner's Material","DepEd Mathematics Teacher's Guide and K to 12 Curriculum Guide","GeoGebra and Khan Academy Math","Teacher-made problem-solving worksheets"], strategies:["problem solving","guided practice","math talk","drill and feedback"] },
+    english: { refs:["DepEd English Learner's Material","DepEd English Teacher's Guide and K to 12 Curriculum Guide","CommonLit and ReadWorks passages","School library texts"], strategies:["shared reading","think aloud","collaborative discussion","writing workshop"] },
+    ap:      { refs:["DepEd Araling Panlipunan Learner's Material","K to 12 Curriculum Guide in Araling Panlipunan","National Historical Commission of the Philippines resources","PSA OpenSTAT resources"], strategies:["case study","map reading","timeline analysis","historical inquiry"] },
+    filipino:{ refs:["DepEd Filipino Learner's Material","K to 12 Gabay Pangkurikulum sa Filipino","Komisyon sa Wikang Filipino resources","Mga akdang pampanitikan at lokal na babasahin"], strategies:["talakayan","pagbasa","pagsulat","dula-dulaan"] },
+    epp:     { refs:["DepEd EPP/TLE Learner's Material","K to 12 Curriculum Guide in EPP/TLE","TESDA online references","Locally available tools and samples"], strategies:["demonstration","return demonstration","project-based learning","portfolio"] },
+    mapeh:   { refs:["DepEd MAPEH Learner's Material","K to 12 Curriculum Guide in MAPEH","WHO health education resources","Music, art, movement, and health materials"], strategies:["performance","creative expression","movement activity","reflection"] }
+  },
+  filipino: {
+    science: { refs:["DepEd Kagamitan ng Mag-aaral sa Agham","DepEd Patnubay ng Guro sa Agham at K to 12 Gabay Pangkurikulum","Mga kagamitang panturo ng DOST-SEI","Khan Academy Science at CK-12 Foundation"], strategies:["pagtatanong","demonstrasyon","imbestigasyon","talakayan ng datos"] },
+    math:    { refs:["DepEd Kagamitan ng Mag-aaral sa Matematika","DepEd Patnubay ng Guro sa Matematika at K to 12 Gabay Pangkurikulum","GeoGebra at Khan Academy Math","Mga worksheet na ginawa ng guro"], strategies:["paglutas ng problema","ginabayang pagsasanay","math talk","drill at feedback"] },
+    english: { refs:["DepEd Kagamitan ng Mag-aaral sa Ingles","DepEd Patnubay ng Guro sa Ingles at K to 12 Gabay Pangkurikulum","CommonLit at ReadWorks na mga babasahin","Mga aklat sa silid-aklatan"], strategies:["pinagsamang pagbasa","think aloud","talakayan","writing workshop"] },
+    ap:      { refs:["DepEd Kagamitan ng Mag-aaral sa Araling Panlipunan","K to 12 Gabay Pangkurikulum sa Araling Panlipunan","Mga sanggunian ng National Historical Commission of the Philippines","PSA OpenSTAT na mga kagamitan"], strategies:["case study","pagbasa ng mapa","pagsusuri ng timeline","historikal na pagtatanong"] },
+    filipino:{ refs:["DepEd Kagamitan ng Mag-aaral sa Filipino","K to 12 Gabay Pangkurikulum sa Filipino","Mga kagamitan ng Komisyon sa Wikang Filipino","Mga akdang pampanitikan at lokal na babasahin"], strategies:["talakayan","pagbasa","pagsulat","dula-dulaan"] },
+    epp:     { refs:["DepEd Kagamitan ng Mag-aaral sa EPP/TLE","K to 12 Gabay Pangkurikulum sa EPP/TLE","Mga online na sanggunian ng TESDA","Mga lokal na kasangkapan at sample"], strategies:["demonstrasyon","balik-demonstrasyon","project-based learning","portfolio"] },
+    mapeh:   { refs:["DepEd Kagamitan ng Mag-aaral sa MAPEH","K to 12 Gabay Pangkurikulum sa MAPEH","Mga kagamitan ng WHO sa health education","Mga kagamitan sa Musika, Sining, Galaw at Kalusugan"], strategies:["pagtatanghal","malikhaing pagpapahayag","gawaing galaw","pagninilay"] }
+  }
+};
+
+function detectSubject(area) {
+  var a = area.toLowerCase();
+  if (a.indexOf('math') >= 0 || a.indexOf('matematika') >= 0) return 'math';
+  if (a.indexOf('english') >= 0 || a.indexOf('reading') >= 0 || a.indexOf('writing') >= 0) return 'english';
+  if (a.indexOf('araling') >= 0 || a.indexOf('social') >= 0 || a === 'ap') return 'ap';
+  if (a.indexOf('filipino') >= 0 || a.indexOf('wika') >= 0) return 'filipino';
+  if (a.indexOf('epp') >= 0 || a.indexOf('tle') >= 0 || a.indexOf('livelihood') >= 0) return 'epp';
+  if (a.indexOf('mapeh') >= 0 || a.indexOf('music') >= 0 || a.indexOf('arts') >= 0 || a.indexOf('health') >= 0) return 'mapeh';
+  return 'science';
+}
+
+/* ================================================================
+   HTML HELPERS
+================================================================ */
+function escH(v) {
+  return String(v).replace(/[&<>'"]/g, function(c) {
+    return {'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c];
+  });
+}
+function list(items)  { return '<ul>'  + items.map(function(i){ return '<li>'+escH(i)+'</li>'; }).join('') + '</ul>'; }
+function olist(items) { return '<ol>'  + items.map(function(i){ return '<li>'+escH(i)+'</li>'; }).join('') + '</ol>'; }
+function genBadge(t)  { return '<span class="generated">'+t.generated+'</span><br>'; }
+function rowPlain(label, content) { return '<tr><td class="label">'+label+'</td><td>'+content+'</td></tr>'; }
+function rowSub(label, sub, content) { return '<tr><td class="label">'+label+'<span class="sub">'+sub+'</span></td><td>'+content+'</td></tr>'; }
+function rowUL(label, descHtml, content) {
+  return '<tr><td class="label"><span class="underlined">'+label+'</span>'+(descHtml?'<div class="italic-desc">'+descHtml+'</div>':'')+'</td><td>'+content+'</td></tr>';
+}
+function banner(title, desc) { return '<div class="banner"><h3>'+title+'</h3><p>'+desc+'</p></div>'; }
+
+/* ================================================================
+   SESSION PLAN GENERATOR
+================================================================ */
+function sessionPlan(n, total, topic, subject, lang) {
+  var titlesEN = ['Introduction to '+topic,'Exploring Key Ideas in '+topic,'Application and Skill-Building for '+topic,'Analysis and Deepening of '+topic,'Synthesis and Assessment of '+topic];
+  var titlesFL = ['Panimula sa '+topic,'Pag-galugad sa Mga Pangunahing Ideya ng '+topic,'Aplikasyon at Pagsasanay sa '+topic,'Pagsusuri at Pagpapalalim ng '+topic,'Sintesis at Pagtatasa ng '+topic];
+  var titles   = lang === 'filipino' ? titlesFL : titlesEN;
+  var strategy = subjectData[lang][subject].strategies[(n-1) % subjectData[lang][subject].strategies.length];
+  if (lang === 'english') {
+    return {
+      title:      total===1 ? 'Complete Learning Session on '+topic : titles[n-1],
+      review:     n===1 ? 'Establish prior knowledge using a KWL prompt about '+topic+'. Record common answers and misconceptions.' : 'Review key points from Session '+(n-1)+' and connect them to today\'s focus on '+topic+'.',
+      motivation: 'Present a familiar situation, object, image, text, or problem connected to '+topic+'. Ask learners what they notice, what they wonder, and why it matters.',
+      instruction:'Use '+strategy+' as the main strategy. Model the concept or skill, define essential vocabulary, provide one guided example, and ask checking questions.',
+      activity:   'Learners complete a collaborative task related to '+topic+' and produce a visible output. Integrate Filipino values such as Bayanihan and Pakikipagkapwa.',
+      assessment: 'Use an exit ticket, short quiz, oral explanation, performance checklist, or written response aligned with the MELCs and objectives.',
+      closure:    n===total ? 'Lead synthesis, collect reflections, administer the culminating task, and identify next steps.' : 'Summarize the key learning and give a short preparation task for Session '+(n+1)+'.'
+    };
+  } else {
+    return {
+      title:      total===1 ? 'Buong Sesyon ng Pagkatuto sa '+topic : titles[n-1],
+      review:     n===1 ? 'Itatag ang nakaraang kaalaman gamit ang KWL tungkol sa '+topic+'. I-record ang mga karaniwang sagot at maling konsepto.' : 'Balikan ang mga pangunahing punto mula sa Sesyon '+(n-1)+' at iugnay sa pokus ngayon sa '+topic+'.',
+      motivation: 'Magpakita ng pamilyar na sitwasyon, bagay, larawan, teksto, o problema na may kaugnayan sa '+topic+'. Tanungin ang mga mag-aaral kung ano ang kanilang napansin.',
+      instruction:'Gamitin ang '+strategy+' bilang pangunahing estratehiya. I-modelo ang konsepto, ipaliwanag ang mahahalagang bokabularyo, magbigay ng halimbawa, at magtanong upang masuri ang pag-unawa.',
+      activity:   'Magtutulungan ang mga mag-aaral sa gawain na may kaugnayan sa '+topic+' at gagawa ng nakikitang output. I-integrate ang mga Pilipinong pagpapahalaga tulad ng Bayanihan at Pakikipagkapwa.',
+      assessment: 'Gumamit ng exit ticket, maikling pagsusulit, oral na paliwanag, performance checklist, o nakasulat na sagot na nakaayon sa MELCs at mga layunin.',
+      closure:    n===total ? 'Pamunuan ang sintesis, kolektahin ang mga pagninilay, ibigay ang culminating task, at tukuyin ang mga susunod na hakbang.' : 'Buoin ang mga pangunahing natutunan at magbigay ng maikling paghahanda para sa Sesyon '+(n+1)+'.'
+    };
+  }
+}
+
+/* ================================================================
+   QUIZ GENERATION — 10 items per session (recall → application)
+================================================================ */
+function generateQuizForSession(sessionN, topic, area, lang) {
+  var t        = T[lang];
+  var unpacked = t.unpackedDay[Math.min(sessionN-1, t.unpackedDay.length-1)].replace('{topic}', topic);
+  var letters  = ['A','B','C','D'], questions = [], answers = [];
+  var tpl;
+  if (lang === 'english') {
+    tpl = [
+      {q:'Which of the following best defines '+topic+'?',                                           opts:['A correct, focused definition of '+topic,'An unrelated topic to '+topic,'A common misconception about '+topic,'A vague description not related to '+topic],correct:0},
+      {q:'Which term is most closely associated with '+topic+'?',                                    opts:['Unrelated term','Key concept of '+topic,'Random word','Opposite term'],correct:1},
+      {q:'In Session '+sessionN+', what was the main focus?',                                        opts:['Unrelated subject','Different lesson','The concept of '+topic,'A review of past lessons only'],correct:2},
+      {q:'Which statement is TRUE about '+topic+'?',                                                 opts:['False statement 1','False statement 2','False statement 3','A correct statement about '+topic],correct:3},
+      {q:'Why is '+topic+' important in '+area+'?',                                                  opts:['Because it builds foundational understanding in '+area,'It is not important','It is only theoretical','It applies only outside school'],correct:0},
+      {q:'Which example BEST illustrates '+topic+'?',                                                opts:['An unrelated example','A real-life situation showing '+topic,'A wrong example','A reversed example'],correct:1},
+      {q:'How does '+topic+' relate to everyday life?',                                              opts:['It has no connection','It is purely academic','It applies in many real situations','It applies only in laboratories'],correct:2},
+      {q:'A student observes '+topic+' in their community. What is the BEST first step?',            opts:['Ignore the observation','Make assumptions only','Argue without basis','Identify and describe what is happening'],correct:3},
+      {q:'If you had to teach a younger learner about '+topic+', which approach is BEST?',           opts:['Use simple examples and visuals','Use only technical terms','Skip the basics','Avoid examples'],correct:0},
+      {q:'Which value is BEST integrated when learning about '+topic+' as a group?',                 opts:['Selfishness','Bayanihan and Pakikipagkapwa','Competition only','Indifference'],correct:1}
+    ];
+  } else {
+    tpl = [
+      {q:'Alin sa sumusunod ang PINAKAANGKOP na kahulugan ng '+topic+'?',                            opts:['Tamang depinisyon ng '+topic,'Hindi kaugnay na paksa','Maling konsepto tungkol sa '+topic,'Malabong paglalarawan'],correct:0},
+      {q:'Aling termino ang pinakamalapit na kaugnay ng '+topic+'?',                                 opts:['Hindi kaugnay','Pangunahing konsepto ng '+topic,'Random na salita','Kabaliktaran na termino'],correct:1},
+      {q:'Sa Sesyon '+sessionN+', ano ang pangunahing pokus?',                                       opts:['Ibang asignatura','Ibang aralin','Ang konsepto ng '+topic,'Pagbabalik-aral lamang'],correct:2},
+      {q:'Aling pahayag ang TAMA tungkol sa '+topic+'?',                                             opts:['Maling pahayag 1','Maling pahayag 2','Maling pahayag 3','Tamang pahayag tungkol sa '+topic],correct:3},
+      {q:'Bakit mahalaga ang '+topic+' sa '+area+'?',                                               opts:['Dahil ito ang pundasyon ng pag-unawa sa '+area,'Hindi ito mahalaga','Teorya lamang ito','Sa labas lamang ng paaralan'],correct:0},
+      {q:'Aling halimbawa ang PINAKAMAHUSAY na naglalarawan sa '+topic+'?',                          opts:['Hindi kaugnay','Sitwasyong totoo na nagpapakita ng '+topic,'Maling halimbawa','Baliktad na halimbawa'],correct:1},
+      {q:'Paano nauugnay ang '+topic+' sa pang-araw-araw na buhay?',                                opts:['Walang koneksyon','Akademiko lamang','Ginagamit sa maraming totoong sitwasyon','Sa laboratoryo lamang'],correct:2},
+      {q:'May nakitang halimbawa ng '+topic+' sa komunidad. Ano ang PINAKAMAGANDANG unang hakbang?', opts:['Huwag pansinin','Mag-asumera lamang','Magtalo nang walang batayan','Tukuyin at ilarawan ang nangyayari'],correct:3},
+      {q:'Kung magtuturo ka sa nakababatang mag-aaral tungkol sa '+topic+', anong pamamaraan ang PINAKAMABUTI?', opts:['Gumamit ng simpleng halimbawa at visual','Gumamit lamang ng teknikal na termino','Laktawan ang mga basic','Iwasan ang mga halimbawa'],correct:0},
+      {q:'Aling pagpapahalaga ang PINAKAMAHUSAY na nailalapat sa pag-aaral ng '+topic+' bilang grupo?', opts:['Pagkamakasarili','Bayanihan at Pakikipagkapwa','Kompetisyon lamang','Kawalang-pakialam'],correct:1}
+    ];
+  }
+  for (var i = 0; i < tpl.length; i++) { questions.push(tpl[i]); answers.push(letters[tpl[i].correct]); }
+  return { unpacked:unpacked, questions:questions, answers:answers };
+}
+
+function renderQuiz(quizTitle, unpackedLC, quiz, t) {
+  var html = '<div class="quiz-section"><h3>'+quizTitle+'</h3>';
+  html += '<p style="margin:0 0 12px;font-style:italic;color:#475569;"><strong>'+t.unpackedLC+':</strong> '+escH(unpackedLC)+'</p>';
+  quiz.questions.forEach(function(item,idx) {
+    html += '<div class="quiz-item"><span class="qnum">'+(idx+1)+'.</span> '+escH(item.q);
+    html += '<ol class="options">'; item.opts.forEach(function(o){ html+='<li>'+escH(o)+'</li>'; }); html += '</ol></div>';
+  });
+  return html + '</div>';
+}
+
+/* ================================================================
+   WEEKLY PISA-LIKE ASSESSMENT — 5 scenarios × 6 items = 30 items
+================================================================ */
+function generatePISA(topic, area, lang) {
+  var letters = ['A','B','C','D'], scenarios = [], allAnswers = [];
+  var ctxEN = [
+    'A community in Barangay San Isidro is observing changes related to '+topic+'. Local leaders gathered data over six months and noted patterns affecting daily living.',
+    'A group of Grade-level students conducted a study on '+topic+' for their school project. They collected data, interviewed experts, and prepared a presentation for the school fair.',
+    'A news report features '+topic+' as a current issue impacting Filipino families. The report includes a graph showing changes from 2020 to 2024 and quotes from community members.',
+    'A teacher and her class designed a class-based mini-project applying concepts of '+topic+'. They documented results and presented findings to a panel of parents.',
+    'A government agency released a campaign related to '+topic+' aimed at promoting awareness in schools and communities throughout the Philippines.'
+  ];
+  var ctxFL = [
+    'Isang komunidad sa Barangay San Isidro ay nagmamasid ng mga pagbabago na may kaugnayan sa '+topic+'. Ang mga lokal na pinuno ay nagtipon ng datos sa loob ng anim na buwan.',
+    'Isang grupo ng mga mag-aaral ay nagsagawa ng pag-aaral tungkol sa '+topic+' para sa kanilang school project. Nangalap sila ng datos at nakipanayam sa mga eksperto.',
+    'Isang balita ang nagtatampok sa '+topic+' bilang isyu na nakakaapekto sa mga Pilipinong pamilya. Kasama sa ulat ang isang graph na nagpapakita ng pagbabago mula 2020 hanggang 2024.',
+    'Isang guro at kanyang klase ay nagdisenyo ng class-based na mini-project na nag-aaplay ng mga konsepto ng '+topic+'. Idinokumento nila ang mga resulta.',
+    'Isang ahensya ng pamahalaan ay naglunsad ng kampanya na may kaugnayan sa '+topic+' upang itaguyod ang kamalayan sa mga paaralan at komunidad.'
+  ];
+  var qEN = [
+    {q:'Based on the scenario, what is the MAIN issue being highlighted about '+topic+'?',  opts:['Unrelated minor matter','Personal opinion only','A central concern impacting the community','Random event with no link'],correct:2},
+    {q:'Which evidence from the scenario BEST supports the conclusion drawn?',             opts:['The data and observations gathered over time','A single unverified comment','An unrelated graph','No evidence at all'],correct:0},
+    {q:'How would you EVALUATE the approach taken in the scenario?',                        opts:['Inadequate; lacks data','Effective; uses data, expert input, and community engagement','Misleading and biased','Random and unstructured'],correct:1},
+    {q:'If you were to PROPOSE an improvement, which would be BEST?',                      opts:['Stop the project','Add more sources, expand sample size, and verify with experts','Use opinions only','Ignore the data'],correct:1},
+    {q:'Which conclusion can be JUSTIFIED based on the scenario\'s information about '+topic+'?', opts:['It has no real-world relevance','It only affects one person','It is connected to community life and requires informed action','It is purely theoretical'],correct:2},
+    {q:'Which Filipino value is MOST aligned with addressing the situation described?',     opts:['Pagkamakasarili (selfishness)','Indifference','Bayanihan and Pakikipagkapwa','Avoidance'],correct:2}
+  ];
+  var qFL = [
+    {q:'Batay sa senaryo, ano ang PANGUNAHING isyu na binibigyang-diin tungkol sa '+topic+'?', opts:['Hindi kaugnay na maliit na bagay','Personal na opinyon lamang','Sentral na alalahanin na nakakaapekto sa komunidad','Random na pangyayari'],correct:2},
+    {q:'Aling ebidensya mula sa senaryo ang PINAKAMAHUSAY na sumusuporta sa konklusyon?',     opts:['Ang datos at obserbasyon na nakuha sa paglipas ng panahon','Isang hindi pa berified na komento','Hindi kaugnay na graph','Walang ebidensya'],correct:0},
+    {q:'Paano mo SUSURIIN ang pamamaraang ginamit sa senaryo?',                               opts:['Hindi sapat; kulang sa datos','Mabisa; gumagamit ng datos, eksperto, at pakikilahok ng komunidad','Mapanlinlang at biased','Random at walang istruktura'],correct:1},
+    {q:'Kung MAGMUMUNGKAHI ka ng pagpapaganda, alin ang PINAKAMABUTI?',                       opts:['Itigil ang proyekto','Magdagdag ng pinagmumulan, palawakin ang sample, at i-verify sa eksperto','Gumamit lamang ng opinyon','Huwag pansinin ang datos'],correct:1},
+    {q:'Aling konklusyon ang MAIBIBIGAY-KATWIRAN batay sa senaryo tungkol sa '+topic+'?',     opts:['Walang totoong kaugnayan','Apektado lamang ang isang tao','Konektado sa buhay-komunidad at nangangailangan ng aksyon','Teorya lamang'],correct:2},
+    {q:'Aling pagpapahalagang Pilipino ang PINAKA-AKMA sa pagharap sa sitwasyon?',            opts:['Pagkamakasarili','Kawalang-pakialam','Bayanihan at Pakikipagkapwa','Pag-iwas'],correct:2}
+  ];
+  var ctx = lang === 'english' ? ctxEN : ctxFL;
+  var qTpl = lang === 'english' ? qEN : qFL;
+  for (var s = 0; s < 5; s++) {
+    var questions = [];
+    for (var q = 0; q < 6; q++) { questions.push(qTpl[q]); allAnswers.push(letters[qTpl[q].correct]); }
+    scenarios.push({ scenario: ctx[s], questions: questions });
+  }
+  return { scenarios: scenarios, answers: allAnswers };
+}
+
+function renderPISA(pisa, t) {
+  var html = '<div class="quiz-section"><h3>'+t.weeklyPISA+'</h3>', gNum = 1;
+  pisa.scenarios.forEach(function(sc, idx) {
+    html += '<div class="scenario-box"><div class="scenario-title">'+t.scenario.replace('{n}', idx+1)+'</div><div style="font-style:italic;">'+escH(sc.scenario)+'</div></div>';
+    sc.questions.forEach(function(item) {
+      html += '<div class="quiz-item"><span class="qnum">'+gNum+'.</span> '+escH(item.q)+'<ol class="options">';
+      item.opts.forEach(function(o){ html+='<li>'+escH(o)+'</li>'; });
+      html += '</ol></div>'; gNum++;
+    });
+  });
+  return html + '</div>';
+}
+
+function renderAnswerKey(allQuizzes, pisa, t) {
+  var html = '<div class="quiz-section"><h3>'+t.answerKey+'</h3><table class="answer-key-table"><thead><tr><th>'+t.quizCol+'</th><th>'+t.keyCol+'</th></tr></thead><tbody>';
+  allQuizzes.forEach(function(qz) {
+    html += '<tr><td><strong>'+qz.title+'</strong></td><td>'+qz.answers.map(function(a,i){ return (i+1)+'. '+a; }).join(', ')+'</td></tr>';
+  });
+  html += '<tr><td><strong>'+t.weeklyPISA+'</strong></td><td>'+pisa.answers.map(function(a,i){ return (i+1)+'. '+a; }).join(', ')+'</td></tr>';
+  return html + '</tbody></table></div>';
+}
+
+/* ================================================================
+   FORM SUBMISSION
+================================================================ */
+document.getElementById('dlpForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var ids = ['lessonTitle','learningArea','teacherName','gradeSection','melcs','contentStandards','performanceStandards'];
+  var ok  = true;
+  ids.forEach(function(id) {
+    var el = document.getElementById(id);
+    if (!el.value.trim()) { el.classList.add('invalid'); ok = false; }
+    else                  { el.classList.remove('invalid'); }
+  });
+  document.getElementById('errorBox').style.display = ok ? 'none' : 'block';
+  if (!ok) return;
+  buildDlp({
+    topic:       document.getElementById('lessonTitle').value.trim(),
+    area:        document.getElementById('learningArea').value.trim(),
+    teacher:     document.getElementById('teacherName').value.trim(),
+    gradeSection:document.getElementById('gradeSection').value.trim(),
+    sessions:    Number(document.getElementById('numSessions').value),
+    melcs:       document.getElementById('melcs').value.trim(),
+    content:     document.getElementById('contentStandards').value.trim(),
+    performance: document.getElementById('performanceStandards').value.trim(),
+    lang:        currentLang
+  });
+});
+
+/* ================================================================
+   BUILD DLP OUTPUT
+================================================================ */
+function buildDlp(data) {
+  var lang    = data.lang, t = T[lang], subject = detectSubject(data.area);
+  var gm      = data.gradeSection.match(/\d+/), grade = gm ? Number(gm[0]) : 5;
+  var objEN   = ['identify and describe essential concepts related to '+data.topic,'explain the relevance of '+data.topic+' using real-life examples','apply learned concepts or skills in tasks appropriate to '+data.area,'create or present an output that demonstrates understanding of '+data.topic,'reflect on values and responsible actions connected to the lesson'];
+  var objFL   = ['tukuyin at ilarawan ang mahahalagang konseptong may kaugnayan sa '+data.topic,'ipaliwanag ang kahalagahan ng '+data.topic+' gamit ang mga halimbawa sa tunay na buhay','i-apply ang natutunang konsepto o kasanayan sa mga gawain na angkop sa '+data.area,'lumikha o magpresenta ng output na nagpapakita ng pag-unawa sa '+data.topic,'magnilay sa mga pagpapahalaga at responsableng aksyon na may kaugnayan sa aralin'];
+  var objectives = lang === 'english' ? objEN : objFL;
+
+  /* ---- HEADER TABLE ---- */
+  var html = '<h2 class="doc-title">'+t.docTitle+'</h2><p class="small-credit">'+t.credit+'</p>';
+  html += '<table class="lp"><tbody>';
+  html += rowPlain(t.lessonTitle, '<strong>'+escH(data.topic)+'</strong>');
+  html += rowPlain(t.learningArea, escH(data.area));
+  html += rowPlain(t.teacherName, escH(data.teacher));
+  html += rowPlain(t.gradeSection, escH(data.gradeSection));
+  html += rowPlain(t.noSessions, String(data.sessions));
+  html += rowSub(t.references, t.refsSub, genBadge(t)+list(subjectData[lang][subject].refs));
+  html += rowSub(t.aiDecl, t.aiDeclSub, genBadge(t)+'<div class="ai-note">'+t.aiNote+'</div>');
+  html += '</tbody></table>';
+
+  /* ---- INTENTIONS ---- */
+  html += banner(t.intentions, t.intentionsDesc);
+  html += '<table class="lp"><tbody>';
+  html += rowUL(t.lcStandards, t.lcStandardsDesc,
+    '<strong>MELCs</strong><br>'+escH(data.melcs)+
+    '<br><br><strong>'+(lang==='english'?'Content Standards':'Pamantayang Pangnilalaman')+'</strong><br>'+escH(data.content)+
+    '<br><br><strong>'+(lang==='english'?'Performance Standards':'Pamantayan sa Pagganap')+'</strong><br>'+escH(data.performance));
+  html += rowUL(t.objectives, t.objectivesDesc, genBadge(t)+t.atEndOf+olist(objectives));
+  html += rowUL(t.learnerContext, t.learnerContextDesc, genBadge(t)+t.learnerContextText.replace('{grade}',grade));
+  html += '</tbody></table>';
+
+  /* ---- LEARNING EXPERIENCE ---- */
+  html += banner(t.learningExp, t.learningExpDesc);
+  html += '<table class="lp"><tbody>';
+  html += rowUL(t.preLesson, t.preLessonDesc, genBadge(t)+t.preLessonText.replace('{topic}',escH(data.topic)));
+
+  var flowHtml = genBadge(t)+t.flowIntro.replace('{n}',data.sessions).replace('{s}',data.sessions>1?(lang==='english'?'s':''):'');
+  for (var i = 1; i <= data.sessions; i++) {
+    var sp = sessionPlan(i, data.sessions, data.topic, subject, lang);
+    flowHtml += '<div class="session-divider">'+t.sessionLabel.replace('{n}',i).replace('{total}',data.sessions)+escH(sp.title)+'</div>';
+    ['review','motivation','instruction','activity','assessment','closure'].forEach(function(key) {
+      flowHtml += '<div class="step-box"><strong>'+t.steps[key][0]+'</strong><small> — '+t.steps[key][1]+'</small><br>'+escH(sp[key])+'</div>';
+    });
+  }
+  html += rowUL(t.flow, t.flowDesc, flowHtml);
+
+  var resEN = ['board and markers or chalk','printed activity sheets and worksheets','teacher-made visual aids and graphic organizers','available multimedia equipment (TV/projector/laptop)','subject-specific references: '+subjectData[lang][subject].refs.join('; '),'alternative low-tech option: printed handouts and oral discussion'];
+  var resFL = ['pisara at marker o tisa','mga naka-print na worksheet at activity sheets','mga visual aid at graphic organizer na ginawa ng guro','magagamit na multimedia equipment (TV/projector/laptop)','mga sanggunian sa asignatura: '+subjectData[lang][subject].refs.join('; '),'alternatibong low-tech: mga handout at oral na talakayan'];
+  html += rowUL(t.learningResources, t.learningResourcesDesc, genBadge(t)+list(lang==='english'?resEN:resFL));
+
+  var intEN = ['Cross-curricular link with related learning areas through '+data.topic,'Values Education: cooperation, responsibility, critical thinking, Bayanihan, Pakikipagkapwa','ICT Integration: use of digital tools or media when available','DRRR / Health / Environment: real-life application connected to the lesson'];
+  var intFL = ['Cross-curricular na kaugnayan sa ibang asignatura sa pamamagitan ng '+data.topic,'Edukasyon sa Pagpapahalaga: pakikipagtulungan, pananagutan, kritikal na pag-iisip, Bayanihan, Pakikipagkapwa','Integrasyon ng ICT: paggamit ng mga digital na kagamitan kung available','DRRR / Kalusugan / Kapaligiran: tunay na aplikasyon na may kaugnayan sa aralin'];
+  html += rowUL(t.integration, t.integrationDesc, genBadge(t)+list(lang==='english'?intEN:intFL));
+  html += '</tbody></table>';
+
+  /* ---- ASSESSMENT ---- */
+  html += banner(t.assessment, t.assessmentDesc);
+  html += '<table class="lp"><tbody>';
+  var fItems = [], sLbl = lang==='english'?'Session':'Sesyon';
+  var sDesc  = lang==='english'?': quick check (exit ticket / oral question / short written response), learner output review, and participation notes with timely feedback.':': mabilisang pagsusuri (exit ticket / oral na tanong / maikling nakasulat na sagot), pagsusuri ng output ng mag-aaral, at mga tala sa pakikilahok na may agarang feedback.';
+  for (var k = 1; k <= data.sessions; k++) fItems.push(sLbl+' '+k+sDesc);
+  if (lang==='english') {
+    fItems.push('Accommodations: varied response formats (oral, written, drawn), small-group options, visual or auditory supports, and extended time when appropriate.');
+    fItems.push('Summative: 10-item daily quizzes per session and a 30-item Weekly PISA-Like Assessment (see section below).');
+  } else {
+    fItems.push('Mga Akomodasyon: iba\'t ibang format ng pagtugon (oral, nakasulat, naka-drawing), small-group na opsyon, visual o auditory na suporta, at pinahabang oras kung kinakailangan.');
+    fItems.push('Summative: 10-aytem na araw-araw na pagsusulit bawat sesyon at 30-aytem na Lingguhang PISA-Like na Pagtatasa (tingnan sa ibaba).');
+  }
+  html += rowUL(t.formative, t.formativeDesc, genBadge(t)+list(fItems));
+  html += '</tbody></table>';
+
+  /* ---- DAILY QUIZZES & PISA ---- */
+  html += '<h2 class="doc-title" style="margin-top:32px;">'+t.assessSection+'</h2><p class="small-credit">'+genBadge(t)+'</p>';
+  var allQuizzes = [];
+  for (var d = 1; d <= data.sessions; d++) {
+    var quiz   = generateQuizForSession(d, data.topic, data.area, lang);
+    var qTitle = t.sessionQuiz.replace('{n}', d);
+    html += renderQuiz(qTitle, quiz.unpacked, quiz, t);
+    allQuizzes.push({ title: qTitle, answers: quiz.answers });
+  }
+  var pisa = generatePISA(data.topic, data.area, lang);
+  html += renderPISA(pisa, t);
+  html += renderAnswerKey(allQuizzes, pisa, t);
+
+  /* ---- WAYS FORWARD ---- */
+  html += banner(t.waysForward, t.waysForwardDesc);
+  html += '<table class="lp"><tbody>';
+  var extEN = ['Home-based exploration or simple investigation related to '+data.topic,'Recommended readings, videos, or open educational resources','Community-based observation or interview connected to the lesson','Remediation activities for learners needing more support; enrichment for advanced learners'];
+  var extFL = ['Home-based na pag-galugad o simpleng imbestigasyon na may kaugnayan sa '+data.topic,'Inirerekomendang babasahin, video, o open educational resources','Community-based na obserbasyon o panayam','Mga gawain sa remediation para sa mga nangangailangan ng higit pang suporta; enrichment para sa advanced learners'];
+  html += rowUL(t.extended, t.extendedDesc, genBadge(t)+list(lang==='english'?extEN:extFL));
+  var refEN = ['Were the objectives achieved by most learners?','Which activity worked best and why?','Who needs remediation or enrichment in the next session?','What changes should be made to instruction, materials, or pacing?','What would I like to share with co-teachers, parents, or school leaders?','What specific support do I need from my instructional coach?'];
+  var refFL = ['Naabot ba ang mga layunin ng karamihan sa mga mag-aaral?','Aling gawain ang pinakamabisa at bakit?','Sino ang nangangailangan ng remediation o enrichment sa susunod na sesyon?','Anong mga pagbabago ang dapat gawin sa pagtuturo, materyales, o pacing?','Ano ang nais kong ibahagi sa mga kapwa-guro, magulang, o pinuno ng paaralan?','Anong tiyak na suporta ang kailangan ko mula sa instructional coach?'];
+  html += rowUL(t.reflections, t.reflectionsDesc, genBadge(t)+olist(lang==='english'?refEN:refFL));
+  html += '</tbody></table>';
+
+  /* ---- RUBRIC ---- */
+  html += '<h2 class="doc-title" style="margin-top:32px;">'+t.rubricTitle+'</h2>';
+  var rubEN = [
+    '<strong>Intentions are clearly stated</strong>, with appropriate learning competencies articulated.',
+    '<strong>Intentions are evident across all sections</strong>, there is coherence.',
+    '<strong>Learning experience is clear</strong> – another teacher can implement this lesson without additional explanation.',
+    '<strong>Learning experience is well-designed,</strong> with intentionally embedded Learning Design Principles.',
+    '<strong>Learning experience maximizes available opportunities</strong> for integration.',
+    '<strong>Learning experience is inclusive,</strong> provides opportunities to support diverse learners.',
+    '<strong>Assessment strategies are integrated throughout the session</strong>, with daily quizzes and weekly PISA-like assessment.',
+    '<strong>Assessment strategies generate evidence</strong> of learning success.',
+    '<strong>The interventions are actionable</strong>, providing ways to extend or adjust learning based on reflections.'
+  ];
+  var rubFL = [
+    '<strong>Malinaw ang mga layunin</strong>, naipahayag ang angkop na mga kakayahan sa pagkatuto.',
+    '<strong>Ang mga layunin ay kitang-kita sa lahat ng seksyon</strong>, may pagkakaisa.',
+    '<strong>Ang karanasan sa pagkatuto ay malinaw</strong> – maaari itong ipatupad ng ibang guro nang walang karagdagang paliwanag.',
+    '<strong>Ang karanasan sa pagkatuto ay mahusay na dinisenyo,</strong> na may mga Prinsipyo sa Disenyo ng Pagkatuto.',
+    '<strong>Pinakikinabangan ang mga pagkakataon</strong> para sa integrasyon.',
+    '<strong>Ang karanasan ay inklusibo,</strong> nagbibigay ng pagkakataon sa magkakaibang mag-aaral.',
+    '<strong>Ang mga estratehiya sa pagtatasa ay nakapaloob sa buong sesyon</strong>, may araw-araw na pagsusulit at lingguhang PISA-like.',
+    '<strong>Ang mga estratehiya sa pagtatasa ay nagbubunga ng ebidensya</strong> ng matagumpay na pagkatuto.',
+    '<strong>Ang mga interbensyon ay maaaring maipatupad</strong>, nagbibigay ng paraan upang palawakin o ayusin ang pagkatuto.'
+  ];
+  var rubricItems = lang === 'english' ? rubEN : rubFL;
+  html += '<table class="rubric"><thead><tr><th>'+t.canSay+'</th><th class="yn">'+t.yes+'</th><th class="yn">'+t.notYet+'</th><th class="reason">'+t.why+'</th></tr></thead><tbody>';
+  rubricItems.forEach(function(item, idx) {
+    var def = t.rubricReasons ? t.rubricReasons[idx] : '';
+    html += '<tr><td>'+item+'</td>' +
+      '<td class="yn"><input type="radio" name="r'+idx+'" value="yes" checked/></td>' +
+      '<td class="yn"><input type="radio" name="r'+idx+'" value="not_yet"/></td>' +
+      '<td class="reason"><textarea placeholder="'+t.addNote+'">'+escH(def)+'</textarea></td></tr>';
+  });
+  html += '</tbody></table>';
+  html += '<div class="notes-box"><h4>'+t.notesTitle+'</h4><textarea placeholder="'+t.notesPlaceholder+'">'+escH(t.coachingNotesDefault||'')+'</textarea></div>';
+
+  document.getElementById('dlpOutput').innerHTML = html;
+  document.getElementById('outputSection').style.display = 'block';
+  document.getElementById('outputSection').scrollIntoView({ behavior:'smooth' });
+}
+
+/* ================================================================
+   SAVE AS MICROSOFT WORD
+================================================================ */
+function downloadAsWord() {
+  var content = document.getElementById('dlpOutput').innerHTML;
+  if (!content) { alert('Please generate a lesson plan first before downloading.'); return; }
+
+  var wordCSS =
+    'body{font-family:Arial,Helvetica,sans-serif;color:#111;background:#fff;padding:20px;}' +
+    'h2{text-align:center;font-weight:900;font-size:18px;margin:4px 0 18px;}' +
+    '.small-credit{text-align:center;color:#047857;font-size:11px;text-transform:uppercase;font-weight:900;margin-bottom:18px;}' +
+    '.generated{background:#ecfdf5;color:#047857;padding:2px 10px;font-size:11px;font-weight:900;text-transform:uppercase;}' +
+    '.ai-note{border-left:4px solid #9333ea;background:#faf5ff;padding:10px 12px;color:#581c87;font-size:13px;margin:12px 0;}' +
+    'table{width:100%;border-collapse:collapse;margin-bottom:4px;}' +
+    'td{border:2px solid #000;vertical-align:top;padding:10px 12px;font-size:14px;line-height:1.5;}' +
+    'td.label{width:32%;border-right:2px dashed #000;font-weight:700;font-style:italic;}' +
+    '.banner{background:#d9d9d9;border:2px solid #000;padding:14px 16px;margin-top:20px;display:flex;gap:18px;}' +
+    '.banner h3{font-weight:900;font-size:22px;margin:0;min-width:180px;}' +
+    '.banner p{font-size:14px;margin:0;line-height:1.5;}' +
+    '.session-divider{background:#0f2f74;color:#fff;padding:10px 14px;border:2px solid #000;font-weight:900;text-transform:uppercase;text-align:center;font-size:14px;margin-top:18px;}' +
+    '.step-box{border-left:4px solid #1d4ed8;background:#eef2ff;padding:10px 12px;margin-bottom:8px;}' +
+    '.step-box strong{color:#0f2f74;display:block;}' +
+    '.quiz-section{margin-top:24px;border:2px solid #000;padding:16px;}' +
+    '.quiz-section h3{background:#f4c430;color:#0f2f74;padding:10px 14px;margin:-16px -16px 14px;font-size:16px;text-transform:uppercase;}' +
+    '.quiz-item{margin-bottom:14px;padding:10px;background:#f8fafc;border-left:3px solid #1d4ed8;}' +
+    '.quiz-item .qnum{font-weight:800;color:#0f2f74;}' +
+    '.options{padding-left:20px;list-style:upper-alpha;}' +
+    '.scenario-box{background:#fffbeb;border:2px solid #f4c430;padding:12px;margin:12px 0;}' +
+    '.scenario-box .scenario-title{font-weight:900;color:#92400e;margin-bottom:6px;text-transform:uppercase;font-size:13px;}' +
+    '.answer-key-table{width:100%;border-collapse:collapse;margin-top:10px;}' +
+    '.answer-key-table th,.answer-key-table td{border:2px solid #000;padding:8px 12px;font-size:13px;text-align:left;}' +
+    '.answer-key-table th{background:#0f2f74;color:#fff;}' +
+    'table.rubric{width:100%;border-collapse:collapse;margin-top:8px;}' +
+    'table.rubric th,table.rubric td{border:2px solid #000;padding:10px 12px;vertical-align:top;font-size:14px;}' +
+    'table.rubric th{font-weight:700;text-align:left;}' +
+    '.notes-box{border:2px solid #000;padding:12px 14px;margin-top:20px;}' +
+    '.notes-box h4{font-weight:700;font-size:15px;margin:0 0 8px;}' +
+    'ul,ol{margin:4px 0 0;padding-left:22px;}';
+
+  var doc =
+    '<!DOCTYPE html>\n' +
+    '<html xmlns:o="urn:schemas-microsoft-com:office:office"\n' +
+    '      xmlns:w="urn:schemas-microsoft-com:office:word"\n' +
+    '      xmlns="http://www.w3.org/TR/REC-html40">\n' +
+    '<head><meta charset="utf-8"><title>Lesson Plan</title>\n' +
+    '<!--[if gte mso 9]><xml><w:WordDocument>' +
+    '<w:View>Print</w:View><w:Zoom>100</w:Zoom><w:DoNotOptimizeForBrowser/>' +
+    '</w:WordDocument></xml><![endif]-->\n' +
+    '<style>' + wordCSS + '</style></head>\n' +
+    '<body>\n' + content + '\n</body>\n</html>';
+
+  var blob = new Blob(['\ufeff' + doc], { type: 'application/msword' });
+  var url  = URL.createObjectURL(blob);
+  var link = document.createElement('a');
+  var topic = (document.getElementById('lessonTitle').value.trim() || 'Lesson_Plan')
+               .replace(/[^a-zA-Z0-9\s\-_]/g, '').replace(/\s+/g, '_').substring(0, 50);
+  link.href     = url;
+  link.download = topic + '_Lesson_Plan.doc';
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+
+  var btn = document.getElementById('wordBtn'), orig = btn.innerHTML;
+  btn.innerHTML = '<svg style="width:18px;height:18px;margin-right:8px;vertical-align:middle;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Downloaded!';
+  btn.style.background = '#059669';
+  setTimeout(function() { btn.innerHTML = orig; btn.style.background = ''; }, 3000);
+}
+</script>
+</body>
+</html>
